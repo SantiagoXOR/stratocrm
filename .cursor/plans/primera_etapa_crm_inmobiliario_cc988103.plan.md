@@ -54,6 +54,7 @@ todos:
   - id: configure-toaster
     content: Agregar Toaster de sonner en layout.tsx principal para notificaciones globales
     status: pending
+isProject: false
 ---
 
 # Primera Etapa - CRM Inmobiliario STRATO
