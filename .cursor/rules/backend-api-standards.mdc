@@ -1,0 +1,267 @@
+---
+description: Estándares obligatorios para API routes: validación, manejo de errores, autenticación, multitenancy y respuestas consistentes.
+globs: ["src/app/api/**/*.ts"]
+alwaysApply: false
+---
+
+# Backend API Standards Rule
+
+## Estándares Obligatorios para API Routes
+
+Todas las API routes deben seguir estos estándares para garantizar consistencia, seguridad y mantenibilidad.
+
+## 1. Validación Obligatoria
+
+**TODAS las API routes deben validar input con Zod:**
+
+```typescript
+// ✅ CORRECTO
+import { validateRequest } from '@/lib/api-helpers'
+import { leadSchema } from '@/lib/validators'
+
+export const POST = withAuth(async (request, session) => {
+  const body = await request.json()
+  const validatedData = validateRequest(leadSchema, body)
+  // ...
+})
+```
+
+```typescript
+// ❌ INCORRECTO - Sin validación
+export const POST = withAuth(async (request, session) => {
+  const body = await request.json()
+  // Usar body directamente sin validar
+  await db.lead.create({ data: body })
+})
+```
+
+## 2. Manejo de Errores Consistente
+
+**SIEMPRE usar `handleApiError()` para errores:**
+
+```typescript
+// ✅ CORRECTO
+import { handleApiError, successResponse } from '@/lib/api-helpers'
+
+export const GET = withAuth(async (request, session) => {
+  try {
+    const data = await getData()
+    return successResponse(data)
+  } catch (error) {
+    return handleApiError(error, {
+      userId: session.user.id,
+    })
+  }
+})
+```
+
+```typescript
+// ❌ INCORRECTO - Manejo manual inconsistente
+export const GET = async (request: NextRequest) => {
+  try {
+    const data = await getData()
+    return NextResponse.json({ data })
+  } catch (error) {
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
+}
+```
+
+## 3. Autenticación Obligatoria
+
+**TODAS las API routes (excepto públicas) deben usar wrappers de autenticación:**
+
+```typescript
+// ✅ CORRECTO - Endpoint autenticado
+import { withAuth } from '@/lib/api-helpers'
+
+export const GET = withAuth(async (request, session) => {
+  // session.user está disponible
+  // ...
+})
+```
+
+```typescript
+// ✅ CORRECTO - Endpoint público (solo si es necesario)
+export const GET = async (request: NextRequest) => {
+  // Endpoint público, sin autenticación
+  // ...
+}
+```
+
+```typescript
+// ❌ INCORRECTO - Endpoint que debería estar autenticado
+export const GET = async (request: NextRequest) => {
+  // Falta verificación de autenticación
+  const data = await getSensitiveData()
+  return NextResponse.json({ data })
+}
+```
+
+## 4. Verificación de Tenant (Multitenancy)
+
+**TODAS las queries a modelos con tenantId deben filtrar por tenant:**
+
+```typescript
+// ✅ CORRECTO
+import { withAuthAndTenant } from '@/lib/api-helpers'
+
+export const GET = withAuthAndTenant(async (request, session, tenant) => {
+  const leads = await db.lead.findMany({
+    where: {
+      tenantId: tenant.id, // CRÍTICO: Filtrar por tenant
+      estado: 'NUEVO',
+    }
+  })
+  return successResponse(leads)
+})
+```
+
+```typescript
+// ❌ INCORRECTO - Sin filtro de tenant
+export const GET = withAuth(async (request, session) => {
+  const leads = await db.lead.findMany({
+    where: { estado: 'NUEVO' } // FALTA tenantId
+  })
+  return successResponse(leads)
+})
+```
+
+## 5. Códigos de Estado HTTP Apropiados
+
+**Usar códigos de estado HTTP correctos:**
+
+- `200 OK`: Operación exitosa
+- `201 Created`: Recurso creado exitosamente
+- `400 Bad Request`: Error de validación
+- `401 Unauthorized`: No autenticado
+- `403 Forbidden`: No autorizado
+- `404 Not Found`: Recurso no encontrado
+- `409 Conflict`: Conflicto (ej: DNI duplicado)
+- `429 Too Many Requests`: Rate limit excedido
+- `500 Internal Server Error`: Error del servidor
+
+```typescript
+// ✅ CORRECTO
+return successResponse(newLead, 201, 'Lead creado exitosamente')
+return successResponse(leads, 200)
+```
+
+## 6. Respuestas JSON Estandarizadas
+
+**SIEMPRE usar `successResponse()` para respuestas exitosas:**
+
+```typescript
+// ✅ CORRECTO
+return successResponse(data)
+return successResponse(data, 201, 'Mensaje opcional')
+```
+
+```typescript
+// ❌ INCORRECTO - Formato inconsistente
+return NextResponse.json({ result: data })
+return NextResponse.json({ success: true, payload: data })
+```
+
+## 7. Logging Apropiado
+
+**Incluir logging con contexto relevante:**
+
+```typescript
+// ✅ CORRECTO
+import { logger } from '@/lib/logger'
+
+export const POST = withAuthAndTenant(async (request, session, tenant) => {
+  const lead = await createLead(data, tenant.id)
+  
+  logger.info('Lead created', {
+    leadId: lead.id,
+    userId: session.user.id,
+    tenantId: tenant.id,
+  })
+  
+  return successResponse(lead, 201)
+})
+```
+
+```typescript
+// ❌ INCORRECTO - Sin logging o sin contexto
+export const POST = withAuth(async (request, session) => {
+  const lead = await createLead(data)
+  return successResponse(lead, 201)
+  // Falta logging
+})
+```
+
+## 8. Rate Limiting
+
+**Aplicar rate limiting en endpoints que lo requieran:**
+
+```typescript
+// ✅ CORRECTO
+import { rateLimitByTenant } from '@/lib/rate-limit'
+
+const rateLimit = rateLimitByTenant(200, 60000) // 200 req/min
+
+export const POST = withAuth(async (request, session) => {
+  const rateLimitResponse = await rateLimit(request)
+  if (rateLimitResponse) return rateLimitResponse
+  
+  // Continuar con la lógica...
+})
+```
+
+## 9. Estructura de Archivo
+
+**Estructura estándar de route handler:**
+
+```typescript
+import { NextRequest } from 'next/server'
+import { withAuth, successResponse, handleApiError, validateRequest } from '@/lib/api-helpers'
+import { leadSchema } from '@/lib/validators'
+import { logger } from '@/lib/logger'
+import { rateLimitByTenant } from '@/lib/rate-limit'
+
+const rateLimit = rateLimitByTenant(200, 60000)
+
+export const GET = withAuth(async (request: NextRequest, session) => {
+  const rateLimitResponse = await rateLimit(request)
+  if (rateLimitResponse) return rateLimitResponse
+
+  try {
+    // Lógica del endpoint
+    const data = await getData(session.user.id)
+    
+    logger.info('Data retrieved', {
+      userId: session.user.id,
+    })
+
+    return successResponse(data)
+  } catch (error) {
+    return handleApiError(error, {
+      userId: session.user.id,
+    })
+  }
+})
+```
+
+## Checklist de Revisión
+
+Antes de hacer commit de una API route, verificar:
+
+- [ ] Usa `withAuth` o `withAuthAndTenant` para protección
+- [ ] Valida input con Zod usando `validateRequest` o `validateQuery`
+- [ ] Usa `handleApiError` para manejo de errores
+- [ ] Usa `successResponse` para respuestas exitosas
+- [ ] Incluye logging apropiado con contexto
+- [ ] Aplica rate limiting cuando sea necesario
+- [ ] Filtra por `tenantId` en todas las queries (cuando aplique)
+- [ ] Usa códigos de estado HTTP apropiados
+- [ ] Retorna respuestas en formato estándar
+
+## Excepciones
+
+**Endpoints públicos** (como `/api/health`) pueden omitir autenticación, pero deben:
+- Aplicar rate limiting por IP
+- Validar input si reciben datos
+- Usar manejo de errores consistente

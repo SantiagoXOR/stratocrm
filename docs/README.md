@@ -12,13 +12,41 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
    - Estructura del proyecto
    - Guía de inicio rápido
 
-2. **[Primera Etapa](PRIMERA_ETAPA.md)**
+2. **[Arquitectura del Sistema](ARQUITECTURA.md)** ⭐ NUEVO
+   - Arquitectura multitenancy
+   - Arquitectura de servicios
+   - Integración con servicios externos
+   - Flujos de datos
+   - Decisiones de diseño
+   - Plan de migración
+
+3. **[Integraciones con Servicios Externos](INTEGRACIONES.md)** ⭐ NUEVO
+   - ManyChat integration
+   - UChat integration
+   - ElevenLabs integration
+   - WhatsApp Business API
+   - Configuración por tenant
+   - Webhooks y casos de uso
+
+4. **[Plan de Implementación Multitenant](PLAN_IMPLEMENTACION_MULTITENANT.md)** ⭐ NUEVO
+   - Fases de implementación
+   - Migración del esquema
+   - Implementación de servicios
+   - Testing y rollout
+
+5. **[Plan 3 Meses - 2 Desarrolladores Junior](PLAN_3_MESES.md)** ⭐ NUEVO
+   - Timeline realista de 12 semanas
+   - Distribución de tareas
+   - Priorización de funcionalidades
+   - Estrategia de testing
+
+6. **[Primera Etapa](PRIMERA_ETAPA.md)**
    - Objetivos y alcance de la primera etapa
    - Arquitectura y estructura de componentes
    - Implementación detallada
    - Consideraciones de diseño y seguridad
 
-3. **[Requerimientos](REQUERIMIENTOS.md)**
+7. **[Requerimientos](REQUERIMIENTOS.md)**
    - Requerimientos funcionales
    - Requerimientos no funcionales
    - Requerimientos técnicos
@@ -26,7 +54,7 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
    - Modelo de datos
    - Especificaciones de interfaz
 
-4. **[Diagramas](DIAGRAMAS.md)**
+8. **[Diagramas](DIAGRAMAS.md)**
    - Diagrama de base de datos (ERD)
    - Diagrama de arquitectura
    - Diagrama de flujo de datos
@@ -34,7 +62,7 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
    - Diagrama de flujo de usuario
    - Diagrama de seguridad
 
-5. **[API Reference](API.md)**
+9. **[API Reference](API.md)**
    - Documentación completa de endpoints
    - Autenticación
    - Leads API
@@ -43,7 +71,7 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
    - Tipos TypeScript
    - Ejemplos de uso
 
-6. **[Tecnologías y Stack](TECNOLOGIAS.md)**
+10. **[Tecnologías y Stack](TECNOLOGIAS.md)**
    - Documentación detallada de todas las tecnologías
    - Next.js App Router y Server Components
    - Prisma ORM y migraciones
@@ -52,20 +80,69 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
    - shadcn/ui y Recharts
    - Mejores prácticas y referencias oficiales
 
-7. **[Esquema de Base de Datos](SCHEMA.md)**
-   - Modelos de datos detallados
-   - Relaciones entre entidades
-   - Índices y optimizaciones
-   - Validaciones
-   - Migraciones
-   - Decisiones de diseño
+11. **[Esquema de Base de Datos](SCHEMA.md)**
+    - Modelos de datos detallados
+    - Relaciones entre entidades
+    - Índices y optimizaciones
+    - Validaciones
+    - Migraciones
+    - Decisiones de diseño
 
-8. **[Integración WhatsApp](WHATSAPP.md)**
-   - Guía completa de integración con WhatsApp Business API
-   - Configuración y autenticación
-   - Envío y recepción de mensajes
-   - Plantillas y webhooks
-   - Manejo de errores
+12. **[Integración WhatsApp](WHATSAPP.md)**
+    - Guía completa de integración con WhatsApp Business API
+    - Configuración y autenticación
+    - Envío y recepción de mensajes
+    - Plantillas y webhooks
+    - Manejo de errores
+
+13. **[Mejores Prácticas Backend](BACKEND_BEST_PRACTICES.md)** ⭐ NUEVO
+    - Estructura de API routes
+    - Validación con Zod
+    - Manejo de errores
+    - Autenticación y autorización
+    - Multitenancy
+    - Integración con servicios externos
+    - Logging estructurado
+    - Rate limiting
+    - Servicios de negocio
+    - Testing de API routes
+
+14. **[Mejores Prácticas Frontend](FRONTEND_BEST_PRACTICES.md)** ⭐ NUEVO
+    - Filosofía de abstracción de API
+    - Arquitectura de componentes
+    - Server Components vs Client Components
+    - Manejo de estado global
+    - Uso del cliente API
+    - React Query y data fetching
+    - Manejo de errores y UX
+    - Convenciones de nomenclatura
+    - Rendimiento y accesibilidad
+
+15. **[Guía de Testing](TESTING.md)** ⭐ NUEVO
+    - Estrategia de testing
+    - Testing de backend
+    - Testing de frontend
+    - Testing de integraciones
+    - Testing de multitenancy
+    - Testing E2E
+    - Mocking y fixtures
+    - CI/CD integration
+
+16. **[Guía de Migración](MIGRATION_GUIDE.md)** ⭐ NUEVO
+    - Migración de API routes
+    - Migración de componentes frontend
+    - Migración de queries a multitenancy
+    - Migración de tipos TypeScript
+    - Migración de servicios externos
+    - Estrategia de migración gradual
+    - Checklist de migración
+
+17. **[Herramientas de Cursor](CURSOR_TOOLS.md)** ⭐ NUEVO
+    - Rules (Reglas) disponibles y cómo funcionan
+    - Skills (Habilidades) para tareas específicas
+    - Subagents (Subagentes) para revisión proactiva
+    - Cómo usar estas herramientas
+    - Troubleshooting y mejores prácticas
 
 ## 🎯 Guías por Tema
 
@@ -84,6 +161,11 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
 - [Requerimientos](REQUERIMIENTOS.md) - Especificaciones funcionales
 - [API Reference](API.md) - Contratos de API
 - [Primera Etapa](PRIMERA_ETAPA.md) - Patrones de implementación
+- [Mejores Prácticas Backend](BACKEND_BEST_PRACTICES.md) - Estándares de código backend
+- [Mejores Prácticas Frontend](FRONTEND_BEST_PRACTICES.md) - Estándares de código frontend
+- [Guía de Testing](TESTING.md) - Estrategias y ejemplos de testing
+- [Guía de Migración](MIGRATION_GUIDE.md) - Cómo migrar código existente a nuevos patrones
+- [Herramientas de Cursor](CURSOR_TOOLS.md) - Rules, Skills y Subagents para mantener calidad de código
 
 ### Para Product Owners / Analistas
 
@@ -104,19 +186,30 @@ Bienvenido a la documentación completa del CRM Inmobiliario STRATO. Esta docume
 **Planificar Tests:**
 - [Requerimientos](REQUERIMIENTOS.md) - Casos de uso detallados
 - [API Reference](API.md) - Códigos de error y validaciones
+- [Guía de Testing](TESTING.md) - Estrategias completas de testing
 
 ## 📖 Estructura de Documentación
 
 ```
 docs/
-├── README.md              # Este archivo - Índice de documentación
-├── TECNOLOGIAS.md         # Documentación detallada de tecnologías
-├── PRIMERA_ETAPA.md       # Detalles de implementación primera etapa
-├── REQUERIMIENTOS.md      # Especificaciones funcionales y técnicas
-├── DIAGRAMAS.md           # Diagramas de arquitectura y flujos
-├── API.md                 # Documentación de API REST
-├── SCHEMA.md              # Esquema de base de datos detallado
-└── WHATSAPP.md            # Guía de integración WhatsApp Business API
+├── README.md                           # Este archivo - Índice de documentación
+├── ARQUITECTURA.md                     # ⭐ Arquitectura multitenancy y servicios
+├── INTEGRACIONES.md                    # ⭐ Integraciones con servicios externos
+├── PLAN_IMPLEMENTACION_MULTITENANT.md  # ⭐ Plan de implementación general
+├── PLAN_3_MESES.md                     # ⭐ Plan realista 3 meses, 2 devs junior
+├── BACKEND_BEST_PRACTICES.md           # ⭐ Mejores prácticas backend
+├── FRONTEND_BEST_PRACTICES.md          # ⭐ Mejores prácticas frontend
+├── TESTING.md                          # ⭐ Guía completa de testing
+├── MIGRATION_GUIDE.md                  # ⭐ Guía de migración de código
+├── CURSOR_TOOLS.md                     # ⭐ Herramientas de Cursor (Rules, Skills, Subagents)
+├── RESUMEN_ARQUITECTURA.md             # Resumen ejecutivo
+├── TECNOLOGIAS.md                      # Documentación detallada de tecnologías
+├── PRIMERA_ETAPA.md                    # Detalles de implementación primera etapa
+├── REQUERIMIENTOS.md                   # Especificaciones funcionales y técnicas
+├── DIAGRAMAS.md                        # Diagramas de arquitectura y flujos
+├── API.md                              # Documentación de API REST
+├── SCHEMA.md                           # Esquema de base de datos detallado
+└── WHATSAPP.md                         # Guía de integración WhatsApp Business API
 ```
 
 ## 🔍 Búsqueda Rápida

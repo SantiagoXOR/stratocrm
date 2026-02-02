@@ -1,0 +1,135 @@
+---
+description: Prohíbe referencias a servicios externos en frontend. El frontend debe usar el cliente API interno exclusivamente.
+globs: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/hooks/**/*.ts", "src/context/**/*.tsx"]
+alwaysApply: false
+---
+
+# Frontend API Abstraction Rule
+
+## Regla Fundamental
+
+**El frontend NUNCA debe referenciar servicios externos directamente. Todo debe pasar a través del cliente API interno (`src/lib/api.ts`).**
+
+## Prohibiciones
+
+### ❌ NUNCA hacer esto en código frontend:
+
+1. **Imports de SDKs externos:**
+```typescript
+// ❌ PROHIBIDO
+import { ManyChatClient } from '@manychat/sdk'
+import { UChatClient } from '@uchat/sdk'
+import { ElevenLabsClient } from '@elevenlabs/sdk'
+```
+
+2. **URLs directas a APIs externas:**
+```typescript
+// ❌ PROHIBIDO
+const response = await fetch('https://api.manychat.com/v1/...')
+const response = await fetch('https://api.uchat.io/...')
+```
+
+3. **Referencias a nombres de servicios externos:**
+```typescript
+// ❌ PROHIBIDO
+if (service === 'manychat') { ... }
+const manychatApiKey = process.env.MANYCHAT_API_KEY
+```
+
+4. **Cliente HTTP directo para servicios externos:**
+```typescript
+// ❌ PROHIBIDO
+const axios = require('axios')
+await axios.post('https://api.manychat.com/...')
+```
+
+## ✅ Forma Correcta
+
+**SIEMPRE usar el cliente API interno:**
+
+```typescript
+// ✅ CORRECTO
+import { api } from '@/lib/api'
+
+// Para cualquier operación, usar métodos del cliente API
+await api.sendMessage({ userId, message })
+await api.getConversations(leadId)
+await api.createLead(data)
+```
+
+## Alcance
+
+Esta regla aplica a:
+- Todos los archivos en `src/app/` (excepto `src/app/api/`)
+- Todos los archivos en `src/components/`
+- Todos los archivos en `src/hooks/`
+- Todos los archivos en `src/context/`
+- Cualquier archivo TypeScript/JavaScript en el frontend
+
+## Excepciones
+
+**NO aplica a:**
+- `src/app/api/**` - Las API routes SÍ pueden usar servicios externos
+- `src/services/**` - Los servicios de negocio SÍ pueden usar servicios externos
+- `src/lib/api.ts` - El cliente API puede tener lógica interna (pero no debe exponer servicios externos directamente)
+
+## Verificación
+
+Al revisar código frontend, verificar:
+1. No hay imports de SDKs externos (ManyChat, UChat, ElevenLabs, WhatsApp SDK)
+2. No hay URLs a APIs externas
+3. No hay referencias a nombres de servicios externos
+4. Todas las llamadas a APIs usan `api` de `@/lib/api`
+
+## Ejemplos de Código Incorrecto vs Correcto
+
+### Ejemplo 1: Enviar Mensaje
+
+```typescript
+// ❌ INCORRECTO
+import { ManyChatClient } from '@manychat/sdk'
+
+export function SendMessageButton() {
+  const handleSend = async () => {
+    const client = new ManyChatClient(process.env.MANYCHAT_API_KEY!)
+    await client.sendMessage(userId, message)
+  }
+}
+
+// ✅ CORRECTO
+import { api } from '@/lib/api'
+
+export function SendMessageButton() {
+  const handleSend = async () => {
+    await api.sendMessage({ userId, message })
+  }
+}
+```
+
+### Ejemplo 2: Obtener Conversaciones
+
+```typescript
+// ❌ INCORRECTO
+const response = await fetch(`https://api.manychat.com/v1/subscribers/${userId}/messages`, {
+  headers: { 'Authorization': `Bearer ${apiKey}` }
+})
+
+// ✅ CORRECTO
+const conversations = await api.getConversations(leadId)
+```
+
+## Motivos
+
+1. **Abstracción**: El frontend no debe conocer detalles de implementación
+2. **Flexibilidad**: Cambiar de ManyChat a UChat solo requiere cambios en backend
+3. **Seguridad**: API keys nunca deben estar en el frontend
+4. **Type Safety**: Tipos compartidos entre frontend y backend
+5. **Mantenibilidad**: Lógica centralizada en un solo lugar
+
+## Acción Requerida
+
+Si encuentras código que viola esta regla:
+1. Identificar qué servicio externo se está usando
+2. Crear método en `src/lib/api.ts` si no existe
+3. Crear endpoint en `src/app/api/` si es necesario
+4. Reemplazar código frontend para usar `api` de `@/lib/api`

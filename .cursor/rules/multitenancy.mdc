@@ -1,0 +1,294 @@
+---
+description: Asegura que todas las queries a modelos con tenantId incluyan filtro por tenant para garantizar aislamiento de datos.
+globs: ["src/app/api/**/*.ts", "src/services/**/*.ts"]
+alwaysApply: false
+---
+
+# Multitenancy Rule
+
+## Regla Crítica de Aislamiento de Datos
+
+**TODAS las queries a modelos con `tenantId` deben incluir filtro por tenant para garantizar aislamiento de datos.**
+
+## Prohibiciones Absolutas
+
+### ❌ NUNCA hacer queries sin filtrar por tenantId:
+
+```typescript
+// ❌ PROHIBIDO - Query sin tenantId
+const leads = await db.lead.findMany({
+  where: { estado: 'NUEVO' }
+  // FALTA: tenantId
+})
+
+// ❌ PROHIBIDO - Query sin tenantId en where
+const lead = await db.lead.findUnique({
+  where: { id: leadId }
+  // FALTA: tenantId en where
+})
+
+// ❌ PROHIBIDO - Update sin verificar tenantId
+await db.lead.update({
+  where: { id: leadId },
+  data: { estado: 'NUEVO' }
+  // FALTA: Verificar que el lead pertenece al tenant
+})
+
+// ❌ PROHIBIDO - Delete sin verificar tenantId
+await db.lead.delete({
+  where: { id: leadId }
+  // FALTA: Verificar que el lead pertenece al tenant
+})
+```
+
+## ✅ Forma Correcta
+
+### 1. Queries con Filtro de Tenant
+
+```typescript
+// ✅ CORRECTO - FindMany con tenantId
+const leads = await db.lead.findMany({
+  where: {
+    tenantId: tenant.id, // OBLIGATORIO
+    estado: 'NUEVO',
+  }
+})
+
+// ✅ CORRECTO - FindUnique con verificación posterior
+const lead = await db.lead.findFirst({
+  where: {
+    id: leadId,
+    tenantId: tenant.id, // OBLIGATORIO
+  }
+})
+
+if (!lead) {
+  throw new Error('Not found: Lead no encontrado o no pertenece a tu tenant')
+}
+```
+
+### 2. Mutations con Verificación de Tenant
+
+```typescript
+// ✅ CORRECTO - Update con verificación de tenant
+const lead = await db.lead.findFirst({
+  where: {
+    id: leadId,
+    tenantId: tenant.id, // Verificar primero
+  }
+})
+
+if (!lead) {
+  throw new Error('Not found: Lead no encontrado')
+}
+
+await db.lead.update({
+  where: { id: leadId },
+  data: { estado: 'NUEVO' }
+})
+```
+
+### 3. Creación con tenantId
+
+```typescript
+// ✅ CORRECTO - Create con tenantId
+const lead = await db.lead.create({
+  data: {
+    nombre: 'Juan Pérez',
+    telefono: '+5491123456789',
+    tenantId: tenant.id, // OBLIGATORIO
+    createdBy: session.user.id,
+  }
+})
+```
+
+### 4. Uso de withAuthAndTenant
+
+```typescript
+// ✅ CORRECTO - Usar wrapper que proporciona tenant
+import { withAuthAndTenant } from '@/lib/api-helpers'
+
+export const GET = withAuthAndTenant(async (request, session, tenant) => {
+  // tenant.id está disponible
+  const leads = await db.lead.findMany({
+    where: { tenantId: tenant.id }
+  })
+  
+  return successResponse(leads)
+})
+```
+
+## Modelos que Requieren tenantId
+
+Los siguientes modelos (cuando se implementen) requieren filtro por tenantId:
+
+- `Lead` - Todos los leads deben tener tenantId
+- `Conversation` - Todas las conversaciones deben tener tenantId
+- `Message` - Todos los mensajes deben tener tenantId
+- Cualquier otro modelo que tenga campo `tenantId`
+
+## Patrones para Relaciones
+
+### Queries con Joins
+
+```typescript
+// ✅ CORRECTO - Join con filtro de tenant
+const leads = await db.lead.findMany({
+  where: {
+    tenantId: tenant.id, // Filtro principal
+    conversations: {
+      some: {
+        status: 'open',
+        // Las conversaciones también deben tener tenantId
+      }
+    }
+  },
+  include: {
+    conversations: {
+      where: {
+        tenantId: tenant.id, // Filtro en relación
+      }
+    }
+  }
+})
+```
+
+### Queries con Agregaciones
+
+```typescript
+// ✅ CORRECTO - Count con filtro de tenant
+const count = await db.lead.count({
+  where: {
+    tenantId: tenant.id, // OBLIGATORIO
+    estado: 'NUEVO',
+  }
+})
+```
+
+## Validación en Mutations
+
+### Patrón de Validación
+
+```typescript
+// ✅ CORRECTO - Validar tenantId antes de mutar
+export const PUT = withAuthAndTenant(async (request, session, tenant) => {
+  const { id } = getRouteParams<{ id: string }>({ params })
+  const body = await request.json()
+  const validatedData = validateRequest(updateLeadSchema, body)
+  
+  // 1. Verificar que el recurso existe y pertenece al tenant
+  const existing = await db.lead.findFirst({
+    where: {
+      id,
+      tenantId: tenant.id, // CRÍTICO
+    }
+  })
+  
+  if (!existing) {
+    throw new Error('Not found: Lead no encontrado o no pertenece a tu tenant')
+  }
+  
+  // 2. Realizar la mutación
+  const updated = await db.lead.update({
+    where: { id },
+    data: validatedData,
+  })
+  
+  return successResponse(updated)
+})
+```
+
+## Testing de Aislamiento
+
+**TODOS los tests deben verificar aislamiento de tenant:**
+
+```typescript
+it('should not return leads from other tenants', async () => {
+  // Crear leads para diferentes tenants
+  await db.lead.create({ data: { ..., tenantId: 'tenant1' } })
+  await db.lead.create({ data: { ..., tenantId: 'tenant2' } })
+  
+  // Request como tenant1
+  const response = await GET(requestWithTenant('tenant1'))
+  const data = await response.json()
+  
+  // Solo debe retornar leads de tenant1
+  expect(data.data).toHaveLength(1)
+  expect(data.data[0].tenantId).toBe('tenant1')
+})
+```
+
+## Logging con tenantId
+
+**SIEMPRE incluir tenantId en logs:**
+
+```typescript
+// ✅ CORRECTO
+logger.info('Lead created', {
+  leadId: lead.id,
+  tenantId: tenant.id, // OBLIGATORIO
+  userId: session.user.id,
+})
+```
+
+## Errores Comunes
+
+### Error 1: Olvidar tenantId en where
+
+```typescript
+// ❌ INCORRECTO
+const leads = await db.lead.findMany({
+  where: { estado: 'NUEVO' } // Falta tenantId
+})
+
+// ✅ CORRECTO
+const leads = await db.lead.findMany({
+  where: {
+    tenantId: tenant.id,
+    estado: 'NUEVO',
+  }
+})
+```
+
+### Error 2: Asumir que el recurso pertenece al tenant
+
+```typescript
+// ❌ INCORRECTO
+const lead = await db.lead.findUnique({ where: { id } })
+await db.lead.update({ where: { id }, data: { ... } })
+// No verifica que el lead pertenece al tenant
+
+// ✅ CORRECTO
+const lead = await db.lead.findFirst({
+  where: { id, tenantId: tenant.id }
+})
+if (!lead) throw new Error('Not found')
+await db.lead.update({ where: { id }, data: { ... } })
+```
+
+## Checklist de Revisión
+
+Antes de hacer commit, verificar:
+
+- [ ] Todas las queries a modelos con tenantId incluyen filtro por tenantId
+- [ ] Todas las mutations verifican que el recurso pertenece al tenant
+- [ ] Todas las creaciones incluyen tenantId
+- [ ] Los tests verifican aislamiento de tenant
+- [ ] Los logs incluyen tenantId
+- [ ] Se usa `withAuthAndTenant` cuando sea necesario
+
+## Motivos
+
+1. **Seguridad**: Prevenir fuga de datos entre tenants
+2. **Integridad**: Garantizar que los datos están correctamente aislados
+3. **Compliance**: Cumplir con requerimientos de multi-tenancy
+4. **Auditoría**: Rastrear operaciones por tenant
+
+## Acción Requerida
+
+Si encuentras código que viola esta regla:
+1. Identificar la query/mutation sin filtro de tenant
+2. Agregar filtro por `tenantId: tenant.id` en el where clause
+3. Verificar que el tenant se obtiene correctamente (usar `withAuthAndTenant`)
+4. Agregar test de aislamiento
+5. Actualizar logs para incluir tenantId

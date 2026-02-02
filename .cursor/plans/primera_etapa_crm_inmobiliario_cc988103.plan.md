@@ -94,7 +94,7 @@ Instalar los siguientes componentes usando `npx shadcn-ui@latest add`:
 
 ### 2. Crear Layout del Dashboard Completo
 
-**Archivo: [src/app/(dashboard)/layout.tsx](src/app/\\\(dashboard)/layout.tsx)**
+**Archivo: [src/app/(dashboard)/layout.tsx](src/app/\\\\(dashboard)/layout.tsx)**
 
 - Reemplazar el layout básico actual
 - Integrar Sidebar y Header como componentes
@@ -149,7 +149,7 @@ Instalar los siguientes componentes usando `npx shadcn-ui@latest add`:
 
 ### 5. Implementar Gestión de Leads
 
-**Nuevo: [src/app/(dashboard)/leads/page.tsx](src/app/\\\(dashboard)/leads/page.tsx)**
+**Nuevo: [src/app/(dashboard)/leads/page.tsx](src/app/\\\\(dashboard)/leads/page.tsx)**
 
 - Página principal de gestión de leads
 - Integrar LeadsTable, LeadFilters y botón para crear lead
@@ -194,7 +194,7 @@ Instalar los siguientes componentes usando `npx shadcn-ui@latest add`:
 
 ### 6. Mejorar Dashboard Principal
 
-**Modificar: [src/app/(dashboard)/dashboard/page.tsx](src/app/\\\(dashboard)/dashboard/page.tsx)**
+**Modificar: [src/app/(dashboard)/dashboard/page.tsx](src/app/\\\\(dashboard)/dashboard/page.tsx)**
 
 - Reemplazar contenido básico
 - Integrar StatsCards, LeadsChart y RecentLeads

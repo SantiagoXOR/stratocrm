@@ -1,0 +1,266 @@
+---
+description: Enforce tipado estricto de TypeScript: evitar any, usar tipos explícitos, manejar null/undefined apropiadamente.
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# TypeScript Strict Rule
+
+## Regla de Tipado Estricto
+
+**El proyecto usa TypeScript en modo estricto. Se debe evitar el uso de `any` y usar tipos explícitos en todas las funciones públicas.**
+
+## Prohibiciones
+
+### ❌ NUNCA usar `any` sin justificación:
+
+```typescript
+// ❌ PROHIBIDO
+function processData(data: any) {
+  return data.something
+}
+
+// ❌ PROHIBIDO
+const result: any = await someFunction()
+
+// ❌ PROHIBIDO
+const config: any = { ... }
+```
+
+### ❌ NUNCA usar `@ts-ignore` o `@ts-expect-error` sin justificación:
+
+```typescript
+// ❌ PROHIBIDO - Sin comentario explicativo
+// @ts-ignore
+const result = problematicCode()
+
+// ❌ PROHIBIDO - Sin justificación válida
+// @ts-expect-error
+const data = unsafeOperation()
+```
+
+## ✅ Forma Correcta
+
+### 1. Usar `unknown` y Type Guards
+
+```typescript
+// ✅ CORRECTO - Usar unknown y type guard
+function processData(data: unknown) {
+  if (typeof data === 'object' && data !== null && 'something' in data) {
+    return (data as { something: string }).something
+  }
+  throw new Error('Invalid data')
+}
+
+// ✅ CORRECTO - Type guard explícito
+function isLead(data: unknown): data is Lead {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    'nombre' in data &&
+    'telefono' in data
+  )
+}
+```
+
+### 2. Tipos Explícitos en Funciones Públicas
+
+```typescript
+// ✅ CORRECTO - Tipo explícito
+export function createLead(data: CreateLeadRequest): Promise<Lead> {
+  // ...
+}
+
+// ✅ CORRECTO - Tipo inferido es aceptable para funciones privadas
+function validateInput(data: unknown) {
+  // Tipo inferido está bien aquí
+}
+```
+
+### 3. Usar Tipos Compartidos
+
+```typescript
+// ✅ CORRECTO - Usar tipos de src/types/api.ts
+import type { Lead, CreateLeadRequest } from '@/types/api'
+
+export function getLead(id: string): Promise<Lead> {
+  // ...
+}
+```
+
+### 4. Inferir Tipos desde Zod Schemas
+
+```typescript
+// ✅ CORRECTO - Inferir desde Zod
+import { z } from 'zod'
+import type { z } from 'zod'
+
+const leadSchema = z.object({
+  nombre: z.string(),
+  telefono: z.string(),
+})
+
+export type LeadInput = z.infer<typeof leadSchema>
+
+// Usar LeadInput en lugar de any
+function createLead(data: LeadInput): Promise<Lead> {
+  // ...
+}
+```
+
+### 5. @ts-expect-error con Justificación
+
+```typescript
+// ✅ CORRECTO - Con justificación válida
+// @ts-expect-error - NextAuth types are incomplete, this is safe
+const role = (session.user as { role?: string }).role
+```
+
+## Tipos Estrictos Configurados
+
+El proyecto tiene habilitado:
+- `strict: true`
+- `strictNullChecks: true`
+- `noUncheckedIndexedAccess: true`
+- `noImplicitAny: true`
+- `noImplicitReturns: true`
+- `noUnusedLocals: true`
+- `noUnusedParameters: true`
+
+## Manejo de Null y Undefined
+
+### ✅ Forma Correcta
+
+```typescript
+// ✅ CORRECTO - Manejo explícito de null/undefined
+function getLeadName(lead: Lead | null): string {
+  if (!lead) {
+    return 'Unknown'
+  }
+  return lead.nombre
+}
+
+// ✅ CORRECTO - Optional chaining
+const name = lead?.nombre ?? 'Unknown'
+
+// ✅ CORRECTO - Type guard
+function isLead(lead: Lead | null): lead is Lead {
+  return lead !== null
+}
+```
+
+### ❌ Forma Incorrecta
+
+```typescript
+// ❌ INCORRECTO - Asumir que no es null
+function getLeadName(lead: Lead | null): string {
+  return lead.nombre // Error: lead puede ser null
+}
+```
+
+## Acceso a Propiedades con noUncheckedIndexedAccess
+
+### ✅ Forma Correcta
+
+```typescript
+// ✅ CORRECTO - Verificar que existe
+const firstItem = array[0]
+if (firstItem !== undefined) {
+  // Usar firstItem
+}
+
+// ✅ CORRECTO - Usar optional chaining
+const value = object['key']?.property
+
+// ✅ CORRECTO - Usar método seguro
+const firstItem = array.at(0) // Retorna undefined si no existe
+```
+
+### ❌ Forma Incorrecta
+
+```typescript
+// ❌ INCORRECTO - Asumir que existe
+const firstItem = array[0]
+firstItem.doSomething() // Error: firstItem puede ser undefined
+```
+
+## Tipos en API Routes
+
+### ✅ Forma Correcta
+
+```typescript
+// ✅ CORRECTO - Tipos explícitos
+import type { NextRequest } from 'next/server'
+import type { Session } from 'next-auth'
+
+export async function GET(
+  request: NextRequest,
+  context: { params: { id: string } }
+): Promise<NextResponse> {
+  // ...
+}
+```
+
+## Tipos en Componentes React
+
+### ✅ Forma Correcta
+
+```typescript
+// ✅ CORRECTO - Props tipadas
+interface LeadCardProps {
+  lead: Lead
+  onEdit?: (id: string) => void
+}
+
+export function LeadCard({ lead, onEdit }: LeadCardProps) {
+  // ...
+}
+```
+
+## Excepciones Válidas
+
+### Casos donde `any` puede ser aceptable (con justificación):
+
+1. **Integración con librerías externas sin tipos:**
+```typescript
+// ✅ ACEPTABLE - Con comentario explicativo
+// @ts-expect-error - Library doesn't have types, this is safe
+const result = (externalLibrary as any).method()
+```
+
+2. **Migración gradual:**
+```typescript
+// ✅ ACEPTABLE - Temporal durante migración
+// TODO: Add proper types
+const legacyData: any = await legacyFunction()
+```
+
+## Checklist de Revisión
+
+Antes de hacer commit, verificar:
+
+- [ ] No hay uso de `any` sin justificación
+- [ ] Todas las funciones públicas tienen tipos explícitos
+- [ ] Se usan tipos compartidos de `src/types/api.ts`
+- [ ] Se manejan null/undefined apropiadamente
+- [ ] Se usan type guards cuando sea necesario
+- [ ] No hay `@ts-ignore` sin comentario explicativo
+- [ ] Se infieren tipos desde Zod schemas cuando sea posible
+
+## Motivos
+
+1. **Type Safety**: Prevenir errores en tiempo de ejecución
+2. **IntelliSense**: Mejor autocompletado en el IDE
+3. **Refactoring**: Cambios más seguros y confiables
+4. **Documentación**: Los tipos sirven como documentación
+5. **Mantenibilidad**: Código más fácil de mantener
+
+## Acción Requerida
+
+Si encuentras código que viola esta regla:
+1. Identificar dónde se usa `any` o falta tipado
+2. Agregar tipos explícitos o usar `unknown` con type guards
+3. Usar tipos compartidos cuando sea posible
+4. Inferir tipos desde Zod schemas cuando aplique
+5. Agregar comentario si `any` es temporalmente necesario
