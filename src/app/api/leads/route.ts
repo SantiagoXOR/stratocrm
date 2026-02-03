@@ -26,11 +26,14 @@ export const GET = withAuth(async (request: NextRequest, session) => {
       ...(params.origen && { origen: params.origen }),
     }
 
+    const page = params.page ?? 1
+    const limit = params.limit ?? 10
+
     const [leads, total] = await Promise.all([
       db.lead.findMany({
         where,
-        skip: (params.page - 1) * params.limit,
-        take: params.limit,
+        skip: (page - 1) * limit,
+        take: limit,
         orderBy: { createdAt: 'desc' },
       }),
       db.lead.count({ where }),
@@ -45,10 +48,10 @@ export const GET = withAuth(async (request: NextRequest, session) => {
     return successResponse({
       data: leads,
       pagination: {
-        page: params.page,
-        limit: params.limit,
+        page,
+        limit,
         total,
-        totalPages: Math.ceil(total / params.limit),
+        totalPages: Math.ceil(total / limit),
       },
     })
   } catch (error) {
