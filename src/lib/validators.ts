@@ -16,3 +16,12 @@ export const leadSchema = z.object({
 
 export type LeadInput = z.infer<typeof leadSchema>
 
+export const leadsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  estado: z.enum(['NUEVO', 'EN_REVISION', 'PREAPROBADO', 'RECHAZADO', 'DOC_PENDIENTE', 'DERIVADO']).optional(),
+  origen: z.enum(['whatsapp', 'instagram', 'facebook', 'comentario', 'web', 'ads']).optional(),
+})
+
+export type LeadsQueryParams = z.infer<typeof leadsQuerySchema>
+
