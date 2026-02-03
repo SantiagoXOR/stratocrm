@@ -16,6 +16,10 @@ export const leadSchema = z.object({
 
 export type LeadInput = z.infer<typeof leadSchema>
 
+export const updateLeadSchema = leadSchema.partial()
+
+export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
+
 export const leadsQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),

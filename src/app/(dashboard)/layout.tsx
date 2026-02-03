@@ -1,6 +1,10 @@
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { Header } from '@/components/layout/Header'
+import { MobileSidebar } from '@/components/layout/MobileSidebar'
+import { UserMenu } from '@/components/layout/UserMenu'
 
 export default async function DashboardLayout({
   children,
@@ -14,22 +18,14 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <nav className="border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <h1 className="text-xl font-bold">CRM Phorencial</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {session.user?.email}
-            </span>
-            <span className="text-xs rounded-full bg-primary/10 px-2 py-1 text-primary">
-              {(session.user as any)?.role || 'USER'}
-            </span>
-          </div>
-        </div>
-      </nav>
-      <main>{children}</main>
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex flex-1 flex-col min-w-0">
+        <Header leftSlot={<MobileSidebar />}>
+          <UserMenu />
+        </Header>
+        <main className="flex-1 overflow-auto p-6">{children}</main>
+      </div>
     </div>
   )
 }
-
